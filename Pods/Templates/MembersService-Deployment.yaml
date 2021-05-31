@@ -1,0 +1,53 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: membersservice-deployment         #Deployment name
+  labels:
+    app: MembersService                   #Name to connect deployment with e.g. service
+    name: membersservice
+spec:
+  replicas: 2                             #Numer of pods replicas
+  selector:                             
+    matchLabels:                          #Field is immutable
+      app: MembersService                 #Field defines how the Deployment finds which Pods to manage
+
+ #-------------------------------> RollingUpdate definition
+  strategy:
+    type: RollingUpdate                   #Type of deployment method. Default: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 25%                 #Max number of pods that can be unavailable during the update process.
+      maxSurge: 50%                       #Max number of pods that can be created over the desired number of pods.
+
+#-------------------------------> Blueprint for Pod
+  template:                               #Blueprint for pods
+    metadata:
+      labels:
+        app: MembersService               #Name of pod which should be the same as the service pod label and selector matchlabels
+    spec:
+      containers:
+      - name: membersservice                    #Name of container (for now is nginx, later it should be name of microservice)
+        image: fitverse/testpublicenv:latest       #Name of docker image (for now is nginx, later it should be name of microservice)
+        ports:
+        - containerPort: 8080               #Port for those containers
+        - name: health-port
+          containerPort: 80
+          #hostPort: 80  
+
+#-------------------------------> startupProbe definiton
+        startupProbe:                     
+          httpGet:
+            path: /api/checktrue          #Path on which kubelet will send an HTTP GET request to the server that is running the container
+            port: health-port
+          failureThreshold: 30            #Max tries that kubelet should make to end with error (Once the startup probe has succeeded once, the startup will be ended)
+          periodSeconds: 10               #Specifies seconds that the kubelet should perform a probe (in this example startup probe will perform every 20 seconds)
+
+#------------------------> ReadinessProbe  for healthcheck
+        readinessProbe:                    
+          httpGet:
+            path: /api/checktrue
+            port: health-port
+            scheme: HTTP                    #Port on which HTTP GET request will be listening
+          initialDelaySeconds: 5            #Max seconds that kubelet should wait before performing the first probe
+          periodSeconds: 20                 #Specifies seconds that the kubelet should perform a probe (in this example liveness probe will perform every 20 seconds)
+          successThreshold: 5               #Specifies min successfully tries after pod will be ready for take requests
+          failureThreshold: 3               #Specifies max failed tries after pod will be unplug from taking requests

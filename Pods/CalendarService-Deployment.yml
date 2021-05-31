@@ -1,0 +1,58 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: calendarservice-deployment
+  labels:
+    app: calendarservice
+    name: calendarservice
+spec:
+  replicas: 2
+  selector:
+    matchLabels:                          
+      app: calendarservice
+
+ #-------------------------------> RollingUpdate definition
+  strategy:
+    type: RollingUpdate 
+    rollingUpdate:
+      maxUnavailable: 25%
+      maxSurge: 50%
+
+#-------------------------------> Blueprint for Pod
+  template:
+    metadata:
+      labels:
+        app: calendarservice
+    spec:
+      containers:
+      - name: calendarservice
+        image: fitverse/calendarservice:latest 
+        ports:
+        - containerPort: 5006
+        - name: health-port
+          containerPort: 80
+          #hostPort: 80
+        env:
+        - name: ConnectionStrings__0__DockerDb
+          value: "test"
+#-------------------------------> Resource managing
+        resources:
+          requests:
+            memory: "64Mi"
+            cpu: "250m"
+          limits:
+            memory: "256Mi"
+            cpu: "500m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: cs-service
+spec:
+  selector:
+    app: calendarservice
+  ports:
+    - protocol: TCP
+      port: 86
+      targetPort: 5006
+

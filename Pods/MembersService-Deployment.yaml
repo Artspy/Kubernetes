@@ -1,0 +1,58 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: membersservice-deployment
+  labels:
+    app: MembersService
+    name: membersservice
+spec:
+  replicas: 2
+  selector:
+    matchLabels:                          
+      app: MembersService
+
+ #-------------------------------> RollingUpdate definition
+  strategy:
+    type: RollingUpdate 
+    rollingUpdate:
+      maxUnavailable: 25%
+      maxSurge: 50%
+
+#-------------------------------> Blueprint for Pod
+  template:
+    metadata:
+      labels:
+        app: MembersService
+    spec:
+      containers:
+      - name: membersservice
+        image: fitverse/membersservice:latest 
+        ports:
+        - containerPort: 5002
+        - name: health-port
+          containerPort: 80
+          #hostPort: 80
+        env:
+        - name: ConnectionStrings__0__DockerDb
+          value: "test"
+#-------------------------------> Resource managing
+        resources:
+          requests:
+            memory: "64Mi"
+            cpu: "250m"
+          limits:
+            memory: "256Mi"
+            cpu: "500m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ms-service
+spec:
+  selector:
+    app: MembersService
+  ports:
+    - protocol: TCP
+      port: 82
+      targetPort: 5002
+

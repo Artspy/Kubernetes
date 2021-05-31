@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: membersservice-service
+spec:
+  selector:
+    app: MembersService
+  ports:
+    - protocol: TCP
+      port: 82
+      targetPort: 5002
+  clusterIP: 10.96.0.13
+

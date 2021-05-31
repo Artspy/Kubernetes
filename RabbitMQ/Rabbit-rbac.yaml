@@ -1,0 +1,35 @@
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: rabbitmq-sa
+  namespace: rabbits
+---
+kind: Role
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: rabbitmq-role
+  namespace: rabbits
+rules:
+- apiGroups: 
+    - ""
+  resources: 
+    - endpoints
+  verbs: 
+    - get
+    - list
+    - watch
+---
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: rabbitmq-rb
+  namespace: rabbits
+subjects:
+- kind: ServiceAccount
+  name: rabbitmq-sa
+  namespace: rabbits
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: rabbitmq-role
